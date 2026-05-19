@@ -173,6 +173,6 @@ GET /system-health
 
 ## Author
 
-Abdoulie Bah
+Abdoulie J Bah
 
 AI Engineer | Data Analyst | Full-Stack AI Developer
