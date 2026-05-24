@@ -31,6 +31,10 @@ export default function Sidebar() {
         <Link href="/audit-logs" className="block rounded-lg p-3 hover:bg-[#1F2937] hover:text-cyan-400">
           Audit Logs
         </Link>
+
+        <Link href="/system-health" className="block rounded-lg p-3 hover:bg-[#1F2937] hover:text-cyan-400">
+          System Health
+        </Link>
       </nav>
     </aside>
   );
