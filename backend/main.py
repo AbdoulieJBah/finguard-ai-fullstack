@@ -1,13 +1,12 @@
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 
-
 app = FastAPI(title="FinGuard AI Backend")
 
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=["http://localhost:3000"],
-    allow_credentials=True,
+    allow_origins=["*"],
+    allow_credentials=False,
     allow_methods=["*"],
     allow_headers=["*"],
 )
@@ -53,7 +52,6 @@ def predict_credit_risk(request: dict):
     credit_score = float(request.get("credit_score", 600))
 
     debt_ratio = loan_amount / income if income > 0 else 1
-
     risk_score = 0
 
     if credit_score < 580:
