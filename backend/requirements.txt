@@ -1,5 +1,2 @@
-fastapi
-uvicorn
-pandas
-scikit-learn
-python-multipart
+fastapi>=0.115,<1
+uvicorn[standard]>=0.30,<1

@@ -1,178 +1,58 @@
 # FinGuard AI
 
-Full-stack AI-powered banking intelligence platform.
+FinGuard is a full-stack demo banking operations and risk-intelligence application. It combines a persistent account ledger and authenticated payments with credit, fraud, AML, audit, and system-health dashboards.
 
-## Tech Stack
+> Demo software only. It does not connect to payment rails and must not be used for real customer funds or production banking decisions.
 
-- Frontend: Next.js, React, TypeScript, Tailwind CSS
-- Backend: FastAPI, Python
-- Charts: Recharts
-- AI/ML: Scikit-learn-ready backend architecture
-- API Docs: FastAPI Swagger UI
+## What works
 
----
+- Secure password hashing and bearer-session authentication
+- Persistent SQLite accounts, balances, and double-entry internal transfers
+- Transaction history and audit events
+- Atomic balance updates with ownership, recipient, currency, and funds validation
+- Credit, fraud, and AML risk assessment APIs
+- Responsive Next.js account, payment, dashboard, copilot, audit, and monitoring screens
+- Interactive OpenAPI documentation at `http://localhost:8000/docs`
 
-## Features
+## Start locally
 
-- Executive Banking Dashboard
-- Credit Risk Prediction
-- Fraud Detection Monitoring
-- AML Case Monitoring
-- AI Banking Copilot
-- Audit Logs
-- FastAPI Backend APIs
-- Real-time Frontend ↔ Backend Integration
+Requirements: Python 3.10+ and Node.js 20+.
 
----
-
-## Project Structure
-
-```text
-finguard-ai/
-├── backend/
-│   ├── main.py
-│   ├── requirements.txt
-│   └── venv/
-│
-├── frontend/
-│   ├── src/
-│   │   ├── app/
-│   │   └── components/
-│   ├── package.json
-│   └── ...
-│
-├── .gitignore
-└── README.md
+```powershell
+cd backend
+python -m venv venv
+.\venv\Scripts\Activate.ps1
+pip install -r requirements.txt
+python -m uvicorn main:app --reload
 ```
 
----
+In another terminal:
 
-## Run Frontend
-
-```bash
+```powershell
 cd frontend
+Copy-Item .env.example .env.local
 npm install
 npm run dev
 ```
 
-Frontend URL:
+Open `http://localhost:3000/login` and use:
 
-```text
-http://localhost:3000
+- Email: `demo@finguard.ai`
+- Password: `FinGuard123!`
+
+The SQLite database is created automatically at `backend/finguard.db`. Set `FINGUARD_DB_PATH` to use a different location and `FINGUARD_CORS_ORIGINS` (comma-separated) for other frontend origins.
+
+## Verification
+
+```powershell
+cd frontend
+npm run lint
+npm run build
+
+cd ..\backend
+python -m py_compile main.py
 ```
 
----
+## Production hardening
 
-## Run Backend
-
-```bash
-cd backend
-
-python -m venv venv
-
-# Windows
-.\venv\Scripts\activate
-
-pip install -r requirements.txt
-
-python -m uvicorn main:app --reload
-```
-
-Backend URL:
-
-```text
-http://localhost:8000
-```
-
-API Documentation:
-
-```text
-http://localhost:8000/docs
-```
-
----
-
-## Backend APIs
-
-### Dashboard Metrics
-
-```http
-GET /dashboard-metrics
-```
-
-### AI Copilot
-
-```http
-POST /copilot
-```
-
-### Credit Risk Prediction
-
-```http
-POST /predict-credit-risk
-```
-
-### Fraud Risk Prediction
-
-```http
-POST /predict-fraud-risk
-```
-
-### AML Risk Prediction
-
-```http
-POST /predict-aml-risk
-```
-
-### Fraud Alerts
-
-```http
-GET /fraud-alerts
-```
-
-### AML Cases
-
-```http
-GET /aml-cases
-```
-
-### Audit Logs
-
-```http
-GET /audit-logs
-```
-
-### Risk Trends
-
-```http
-GET /risk-trends
-```
-
-### System Health
-
-```http
-GET /system-health
-```
-
----
-
-## Future Enhancements
-
-- PostgreSQL Database
-- Real Machine Learning Models
-- OpenAI/Gemini Integration
-- Docker Deployment
-- AWS/Azure Deployment
-- Authentication & RBAC
-- Real-time WebSocket Monitoring
-- PDF Executive Reports
-- Kafka Streaming Pipelines
-- Vector Database + RAG AI Copilot
-
----
-
-## Author
-
-Abdoulie J Bah
-
-AI Engineer | Data Analyst | Full-Stack AI Developer
+Before any real deployment, replace SQLite with a managed transactional database, place sessions behind an identity provider with MFA/RBAC, use a secrets manager, add idempotency keys and payment approval workflows, encrypt sensitive data, and complete independent security/compliance testing.

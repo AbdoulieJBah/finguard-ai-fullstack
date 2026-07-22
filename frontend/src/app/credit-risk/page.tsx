@@ -6,7 +6,7 @@ import Sidebar from "@/components/Sidebar";
 export default function CreditRiskPage() {
   const API_URL =
     process.env.NEXT_PUBLIC_API_URL ||
-    "https://finguard-ai-fullstack-production.up.railway.app";
+    "http://localhost:8000";
 
   const [income, setIncome] = useState(50000);
   const [loanAmount, setLoanAmount] = useState(20000);

@@ -14,7 +14,7 @@ interface SystemHealth {
 export default function SystemHealthPage() {
   const API_URL =
     process.env.NEXT_PUBLIC_API_URL ||
-    "https://finguard-ai-fullstack-production.up.railway.app";
+    "http://localhost:8000";
 
   const [health, setHealth] = useState<SystemHealth | null>(null);
 

@@ -6,7 +6,7 @@ import Sidebar from "@/components/Sidebar";
 export default function AICopilotPage() {
   const API_URL =
     process.env.NEXT_PUBLIC_API_URL ||
-    "https://finguard-ai-fullstack-production.up.railway.app";
+    "http://localhost:8000";
 
   const [question, setQuestion] = useState("");
   const [answer, setAnswer] = useState("");

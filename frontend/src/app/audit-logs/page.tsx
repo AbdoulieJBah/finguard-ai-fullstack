@@ -7,7 +7,7 @@ export default function AuditLogsPage() {
   const [logs, setLogs] = useState<any[]>([]);
 
   useEffect(() => {
-    fetch("http://localhost:8000/audit-logs")
+    fetch(`${process.env.NEXT_PUBLIC_API_URL || "http://localhost:8000"}/audit-logs`)
       .then((res) => res.json())
       .then((data) => setLogs(data));
   }, []);
