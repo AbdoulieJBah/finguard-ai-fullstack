@@ -1,89 +1,76 @@
 "use client";
 
-import { useState } from "react";
-import Sidebar from "@/components/Sidebar";
+import { FormEvent, useState } from "react";
+import AppShell, { ErrorNotice, PageHeader } from "@/components/AppShell";
+import { inputClass, primaryButtonClass } from "@/components/RiskWidgets";
+import { api } from "@/lib/api";
 
-export default function AICopilotPage() {
-  const API_URL =
-    process.env.NEXT_PUBLIC_API_URL ||
-    "http://localhost:8000";
+const SUGGESTIONS = ["What is the fraud situation?", "How many AML cases are open?", "What is the average risk score?", "What is my balance?"];
 
+export default function CopilotPage() {
   const [question, setQuestion] = useState("");
   const [answer, setAnswer] = useState("");
+  const [error, setError] = useState("");
   const [loading, setLoading] = useState(false);
 
-  const askCopilot = async () => {
-    if (!question.trim()) return;
-
+  async function ask(text: string) {
+    if (text.trim().length < 2) return;
     setLoading(true);
+    setError("");
     setAnswer("");
-
     try {
-      const response = await fetch(`${API_URL}/copilot`, {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-        },
-        body: JSON.stringify({
-          question,
-        }),
-      });
-
-      const data = await response.json();
+      const data = await api<{ response: string }>("/copilot", { method: "POST", body: JSON.stringify({ question: text }) });
       setAnswer(data.response);
-    } catch (error) {
-      console.error("Copilot request failed:", error);
-      setAnswer("Unable to connect to FinGuard AI backend.");
+    } catch (e) {
+      setError(e instanceof Error ? e.message : "The copilot could not answer");
+    } finally {
+      setLoading(false);
     }
+  }
 
-    setLoading(false);
-  };
+  function submit(event: FormEvent) {
+    event.preventDefault();
+    void ask(question);
+  }
 
   return (
-    <div className="flex min-h-screen flex-col bg-[#0B1120] text-white md:flex-row">
-      <Sidebar />
-
-      <main className="min-w-0 flex-1 p-4 sm:p-6 lg:p-8">
-        <h1 className="text-3xl font-bold sm:text-4xl lg:text-5xl text-cyan-400">
-          AI Banking Copilot
-        </h1>
-
-        <p className="mt-3 text-gray-400">
-          Ask questions about credit risk, fraud detection, AML monitoring, and audit intelligence.
-        </p>
-
-        <div className="mt-10 rounded-2xl bg-[#111827] p-5 sm:p-8">
-          <h2 className="text-2xl font-bold sm:text-3xl text-yellow-400">
-            Ask FinGuard AI
-          </h2>
-
-          <textarea
-            value={question}
-            onChange={(e) => setQuestion(e.target.value)}
-            placeholder="Example: What is the current fraud risk?"
-            className="mt-6 h-40 w-full rounded-xl bg-[#1F2937] p-4 text-white outline-none"
-          />
-
-          <button
-            onClick={askCopilot}
-            className="mt-6 rounded-xl bg-cyan-400 px-8 py-4 font-bold text-black transition hover:bg-cyan-300"
-          >
-            {loading ? "Thinking..." : "Ask Copilot"}
-          </button>
-
-          {answer && (
-            <div className="mt-10 rounded-2xl bg-[#0F172A] p-5 sm:p-8">
-              <h3 className="text-2xl font-bold sm:text-3xl text-green-400">
-                FinGuard AI Response
-              </h3>
-
-              <p className="mt-6 text-lg leading-8 text-white">
-                {answer}
-              </p>
-            </div>
-          )}
+    <AppShell>
+      <PageHeader
+        eyebrow="Assistant"
+        title="FinGuard Copilot"
+        description="Ask about fraud alerts, AML cases, risk scores or your balances. Answers use live figures from the database; the current version routes questions by keyword."
+      />
+      <form onSubmit={submit} className="mt-8 rounded-2xl bg-[#111827] p-5 sm:p-8">
+        <label className="block text-sm text-slate-300">
+          Your question
+          <textarea value={question} onChange={(e) => setQuestion(e.target.value)} maxLength={500} placeholder="Example: What is the fraud situation?" className={`${inputClass} h-32`} />
+        </label>
+        <div className="mt-4 flex flex-wrap gap-2">
+          {SUGGESTIONS.map((suggestion) => (
+            <button
+              key={suggestion}
+              type="button"
+              onClick={() => {
+                setQuestion(suggestion);
+                void ask(suggestion);
+              }}
+              className="rounded-full border border-white/10 px-3 py-1.5 text-sm text-slate-300 hover:border-cyan-400 hover:text-white"
+            >
+              {suggestion}
+            </button>
+          ))}
         </div>
-      </main>
-    </div>
+        <button type="submit" disabled={loading || question.trim().length < 2} className={primaryButtonClass}>
+          {loading ? "Thinking…" : "Ask"}
+        </button>
+        {error && <ErrorNotice message={error} />}
+      </form>
+      {answer && (
+        <section className="mt-8 rounded-2xl border border-white/10 bg-[#0F172A] p-5 sm:p-8" aria-live="polite">
+          <h2 className="text-xl font-bold text-green-400">Answer</h2>
+          <p className="mt-4 text-lg leading-8">{answer}</p>
+        </section>
+      )}
+    </AppShell>
   );
 }

@@ -1,145 +1,86 @@
 "use client";
 
-import { useState } from "react";
-import Sidebar from "@/components/Sidebar";
+import { FormEvent, useState } from "react";
+import AppShell, { ErrorNotice, PageHeader } from "@/components/AppShell";
+import { AlertList, RiskResultCard, inputClass, primaryButtonClass } from "@/components/RiskWidgets";
+import { api } from "@/lib/api";
+import type { FraudResult } from "@/lib/types";
 
 export default function FraudDetectionPage() {
-  const API_URL =
-    process.env.NEXT_PUBLIC_API_URL ||
-    "http://localhost:8000";
-
   const [transactionAmount, setTransactionAmount] = useState(12500);
   const [transactionFrequency, setTransactionFrequency] = useState(18);
   const [internationalTransfer, setInternationalTransfer] = useState(true);
-
-  const [result, setResult] = useState<any>(null);
+  const [result, setResult] = useState<FraudResult | null>(null);
+  const [error, setError] = useState("");
   const [loading, setLoading] = useState(false);
+  const [refreshKey, setRefreshKey] = useState(0);
 
-  const predictFraudRisk = async () => {
+  async function assess(event: FormEvent) {
+    event.preventDefault();
     setLoading(true);
-
+    setError("");
     try {
-      const response = await fetch(`${API_URL}/predict-fraud-risk`, {
+      const data = await api<FraudResult>("/predict-fraud-risk", {
         method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-        },
         body: JSON.stringify({
           transaction_amount: transactionAmount,
           transaction_frequency: transactionFrequency,
           international_transfer: internationalTransfer,
         }),
       });
-
-      const data = await response.json();
       setResult(data);
-    } catch (error) {
-      console.error("Fraud prediction failed:", error);
+      setRefreshKey((key) => key + 1);
+    } catch (e) {
+      setError(e instanceof Error ? e.message : "Assessment failed");
+    } finally {
+      setLoading(false);
     }
-
-    setLoading(false);
-  };
+  }
 
   return (
-    <div className="flex min-h-screen flex-col bg-[#0B1120] text-white md:flex-row">
-      <Sidebar />
-
-      <main className="min-w-0 flex-1 p-4 sm:p-6 lg:p-8">
-        <h1 className="text-3xl font-bold sm:text-4xl lg:text-5xl text-cyan-400">
-          Fraud Detection Intelligence
-        </h1>
-
-        <p className="mt-3 text-gray-400">
-          Real-time fraud monitoring and anomaly intelligence system.
-        </p>
-
-        <div className="mt-10 rounded-2xl bg-[#111827] p-5 sm:p-8">
-          <h2 className="text-2xl font-bold sm:text-3xl text-yellow-400">
-            Fraud Risk Prediction
-          </h2>
-
-          <div className="mt-8 grid grid-cols-1 gap-6 md:grid-cols-3">
-            <div>
-              <label className="text-gray-300">Transaction Amount</label>
-              <input
-                type="number"
-                value={transactionAmount}
-                onChange={(e) =>
-                  setTransactionAmount(Number(e.target.value))
-                }
-                className="mt-2 w-full rounded-xl bg-[#1F2937] p-4 text-white outline-none"
-              />
-            </div>
-
-            <div>
-              <label className="text-gray-300">Transaction Frequency</label>
-              <input
-                type="number"
-                value={transactionFrequency}
-                onChange={(e) =>
-                  setTransactionFrequency(Number(e.target.value))
-                }
-                className="mt-2 w-full rounded-xl bg-[#1F2937] p-4 text-white outline-none"
-              />
-            </div>
-
-            <div>
-              <label className="text-gray-300">
-                International Transfer
-              </label>
-
-              <select
-                value={internationalTransfer ? "true" : "false"}
-                onChange={(e) =>
-                  setInternationalTransfer(e.target.value === "true")
-                }
-                className="mt-2 w-full rounded-xl bg-[#1F2937] p-4 text-white outline-none"
-              >
-                <option value="true">Yes</option>
-                <option value="false">No</option>
-              </select>
-            </div>
-          </div>
-
-          <button
-            onClick={predictFraudRisk}
-            className="mt-8 rounded-xl bg-cyan-400 px-8 py-4 font-bold text-black transition hover:bg-cyan-300"
-          >
-            {loading ? "Analyzing..." : "Predict Fraud Risk"}
-          </button>
-
-          {result && (
-            <div className="mt-10 rounded-2xl bg-[#0F172A] p-5 sm:p-8">
-              <h3 className="text-2xl font-bold sm:text-3xl text-green-400">
-                Prediction Result
-              </h3>
-
-              <div className="mt-6 grid grid-cols-1 gap-6 md:grid-cols-2">
-                <div>
-                  <p className="text-gray-400">Fraud Level</p>
-                  <h2 className="text-5xl font-bold text-red-400">
-                    {result.fraud_level}
-                  </h2>
-                </div>
-
-                <div>
-                  <p className="text-gray-400">Fraud Score</p>
-                  <h2 className="text-5xl font-bold text-yellow-400">
-                    {result.fraud_score}
-                  </h2>
-                </div>
-              </div>
-
-              <div className="mt-8">
-                <p className="text-gray-400">AI Recommendation</p>
-                <p className="mt-3 text-lg text-white">
-                  {result.recommendation}
-                </p>
-              </div>
-            </div>
-          )}
+    <AppShell>
+      <PageHeader
+        eyebrow="Fraud monitoring"
+        title="Fraud Detection"
+        description="Score a transaction against the fraud scorecard. High-risk results open an alert for review, and every assessment is logged."
+      />
+      <form onSubmit={assess} className="mt-8 rounded-2xl bg-[#111827] p-5 sm:p-8">
+        <h2 className="text-xl font-bold text-yellow-400 sm:text-2xl">Assess a transaction</h2>
+        <div className="mt-6 grid grid-cols-1 gap-5 md:grid-cols-3">
+          <label className="block text-sm text-slate-300">
+            Transaction amount (EUR)
+            <input type="number" min="0.01" step="0.01" required value={transactionAmount} onChange={(e) => setTransactionAmount(Number(e.target.value))} className={inputClass} />
+          </label>
+          <label className="block text-sm text-slate-300">
+            Transactions in the period
+            <input type="number" min="1" step="1" required value={transactionFrequency} onChange={(e) => setTransactionFrequency(Number(e.target.value))} className={inputClass} />
+          </label>
+          <label className="block text-sm text-slate-300">
+            International transfer
+            <select value={internationalTransfer ? "yes" : "no"} onChange={(e) => setInternationalTransfer(e.target.value === "yes")} className={inputClass}>
+              <option value="yes">Yes</option>
+              <option value="no">No</option>
+            </select>
+          </label>
         </div>
-      </main>
-    </div>
+        <button type="submit" disabled={loading} className={primaryButtonClass}>
+          {loading ? "Assessing…" : "Assess fraud risk"}
+        </button>
+        {error && <ErrorNotice message={error} />}
+      </form>
+      {result && (
+        <RiskResultCard
+          level={result.fraud_level}
+          score={result.fraud_score}
+          recommendation={result.recommendation}
+          factors={result.factors}
+          assessmentId={result.assessment_id}
+          engine={result.engine}
+          alertId={result.alert_id}
+          alertLabel="Fraud alert"
+        />
+      )}
+      <AlertList kind="fraud" title="Open fraud alerts" refreshKey={refreshKey} />
+    </AppShell>
   );
 }

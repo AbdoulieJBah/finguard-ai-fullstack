@@ -1,221 +1,119 @@
 "use client";
 
-import { useEffect, useState } from "react";
-import Sidebar from "@/components/Sidebar";
-import {
-  LineChart,
-  Line,
-  AreaChart,
-  Area,
-  XAxis,
-  YAxis,
-  CartesianGrid,
-  Tooltip,
-  ResponsiveContainer,
-} from "recharts";
+import { useCallback, useEffect, useState } from "react";
+import { Area, AreaChart, CartesianGrid, Line, LineChart, ResponsiveContainer, Tooltip, XAxis, YAxis } from "recharts";
+import AppShell, { ErrorNotice, PageHeader } from "@/components/AppShell";
+import { useAuth } from "@/components/AuthProvider";
+import { api } from "@/lib/api";
+import type { DashboardMetrics, RiskTrend } from "@/lib/types";
 
-interface DashboardMetrics {
-  risk_score: number;
-  fraud_alerts: number;
-  aml_cases: number;
-  ai_predictions: number;
+const tooltipStyle = { backgroundColor: "#0F172A", border: "1px solid rgba(255,255,255,0.1)", borderRadius: 12, color: "#fff" };
+
+function Stat({ label, value, note, colour }: { label: string; value: string | number; note: string; colour: string }) {
+  return (
+    <div className="rounded-2xl bg-[#111827] p-6">
+      <p className="text-slate-400">{label}</p>
+      <p className={`mt-3 text-4xl font-bold sm:text-5xl ${colour}`}>{value}</p>
+      <p className="mt-2 text-sm text-slate-500">{note}</p>
+    </div>
+  );
 }
 
-interface RiskTrend {
-  month: string;
-  risk: number;
-  fraud: number;
-  aml: number;
+function ChartCard({ title, description, colour, children }: { title: string; description: string; colour: string; children: React.ReactElement }) {
+  return (
+    <div className="rounded-2xl bg-[#111827] p-5 sm:p-8">
+      <h2 className={`text-2xl font-bold ${colour}`}>{title}</h2>
+      <p className="mt-2 text-slate-400">{description}</p>
+      <div className="mt-8 h-72">
+        <ResponsiveContainer width="100%" height="100%">
+          {children}
+        </ResponsiveContainer>
+      </div>
+    </div>
+  );
 }
 
 export default function DashboardPage() {
-  const API_URL =
-    process.env.NEXT_PUBLIC_API_URL ||
-    "http://localhost:8000";
-
+  const { user } = useAuth();
   const [metrics, setMetrics] = useState<DashboardMetrics | null>(null);
   const [trends, setTrends] = useState<RiskTrend[]>([]);
+  const [error, setError] = useState("");
+
+  const load = useCallback(() => {
+    setError("");
+    Promise.all([api<DashboardMetrics>("/dashboard-metrics"), api<RiskTrend[]>("/risk-trends")])
+      .then(([m, t]) => {
+        setMetrics(m);
+        setTrends(t);
+      })
+      .catch((e: unknown) => setError(e instanceof Error ? e.message : "Could not load the dashboard"));
+  }, []);
 
   useEffect(() => {
-    fetch(`${API_URL}/dashboard-metrics`)
-      .then((res) => res.json())
-      .then((data) => setMetrics(data))
-      .catch(() =>
-        setMetrics({
-          risk_score: 82,
-          fraud_alerts: 24,
-          aml_cases: 13,
-          ai_predictions: 1284,
-        })
-      );
-
-    fetch(`${API_URL}/risk-trends`)
-      .then((res) => res.json())
-      .then((data) => setTrends(data))
-      .catch(() =>
-        setTrends([
-          { month: "Jan", risk: 45, fraud: 20, aml: 15 },
-          { month: "Feb", risk: 52, fraud: 25, aml: 18 },
-          { month: "Mar", risk: 48, fraud: 22, aml: 17 },
-          { month: "Apr", risk: 70, fraud: 40, aml: 29 },
-          { month: "May", risk: 66, fraud: 38, aml: 31 },
-          { month: "Jun", risk: 82, fraud: 50, aml: 36 },
-        ])
-      );
-  }, [API_URL]);
-
-  if (!metrics) {
-    return (
-      <div className="flex h-screen items-center justify-center bg-[#0B1120] text-2xl text-white">
-        Loading FinGuard AI...
-      </div>
-    );
-  }
+    if (user) load();
+  }, [user, load]);
 
   return (
-    <div className="flex min-h-screen flex-col bg-[#0B1120] text-white md:flex-row">
-      <Sidebar />
-
-      <main className="min-w-0 flex-1 p-4 sm:p-6 lg:p-8">
-        <p className="text-sm uppercase tracking-[0.3em] text-cyan-400">
-          Enterprise Banking Intelligence Platform
-        </p>
-
-        <h1 className="mt-3 text-3xl font-bold sm:text-4xl lg:text-5xl">Executive Dashboard</h1>
-
-        <p className="mt-4 text-gray-400">
-          Real-time banking intelligence, fraud analytics, AML monitoring, and AI-powered risk insights.
-        </p>
-
-        <div className="mt-10 grid grid-cols-1 gap-6 md:grid-cols-4">
-          <div className="rounded-2xl bg-[#111827] p-6">
-            <p className="text-gray-400">Risk Score</p>
-            <h2 className="mt-3 text-5xl font-bold text-cyan-400">
-              {metrics.risk_score}%
-            </h2>
-            <p className="mt-2 text-sm text-gray-500">Portfolio risk level</p>
+    <AppShell>
+      <PageHeader
+        eyebrow="Banking risk intelligence"
+        title="Executive Dashboard"
+        description="Live figures from the FinGuard database: open fraud alerts, AML cases and logged risk assessments. Demo data is simulated."
+      />
+      {error && <ErrorNotice message={error} onRetry={load} />}
+      {!metrics && !error && <p className="mt-10 text-slate-400">Loading figures…</p>}
+      {metrics && (
+        <>
+          <div className="mt-10 grid grid-cols-1 gap-6 sm:grid-cols-2 xl:grid-cols-4">
+            <Stat label="Average risk score" value={`${metrics.risk_score}/100`} note={`Across ${metrics.assessments_30d} assessments in the last 30 days`} colour="text-cyan-400" />
+            <Stat label="Open fraud alerts" value={metrics.fraud_alerts} note="Not yet closed" colour="text-red-400" />
+            <Stat label="Open AML cases" value={metrics.aml_cases} note="Not yet closed" colour="text-yellow-400" />
+            <Stat label="Risk assessments" value={metrics.assessments_logged.toLocaleString()} note="Logged with inputs and scores" colour="text-green-400" />
           </div>
 
-          <div className="rounded-2xl bg-[#111827] p-6">
-            <p className="text-gray-400">Fraud Alerts</p>
-            <h2 className="mt-3 text-5xl font-bold text-red-400">
-              {metrics.fraud_alerts}
-            </h2>
-            <p className="mt-2 text-sm text-gray-500">Active investigations</p>
-          </div>
-
-          <div className="rounded-2xl bg-[#111827] p-6">
-            <p className="text-gray-400">AML Cases</p>
-            <h2 className="mt-3 text-5xl font-bold text-yellow-400">
-              {metrics.aml_cases}
-            </h2>
-            <p className="mt-2 text-sm text-gray-500">Compliance watchlist</p>
-          </div>
-
-          <div className="rounded-2xl bg-[#111827] p-6">
-            <p className="text-gray-400">AI Predictions</p>
-            <h2 className="mt-3 text-5xl font-bold text-green-400">
-              {metrics.ai_predictions}
-            </h2>
-            <p className="mt-2 text-sm text-gray-500">Model decisions logged</p>
-          </div>
-        </div>
-
-        <div className="mt-10 grid grid-cols-1 gap-8 xl:grid-cols-2">
-          <div className="rounded-2xl bg-[#111827] p-5 sm:p-8">
-            <h2 className="text-2xl font-bold text-cyan-400">
-              Risk Analytics Trend
-            </h2>
-
-            <p className="mt-2 text-gray-400">
-              Monthly AI-generated portfolio risk movement.
-            </p>
-
-            <div className="mt-8 h-80">
-              <ResponsiveContainer width="100%" height="100%">
-                <LineChart data={trends}>
-                  <CartesianGrid strokeDasharray="3 3" stroke="#374151" />
-                  <XAxis dataKey="month" stroke="#9CA3AF" />
-                  <YAxis stroke="#9CA3AF" />
-                  <Tooltip />
-                  <Line
-                    type="monotone"
-                    dataKey="risk"
-                    stroke="#22D3EE"
-                    strokeWidth={4}
-                  />
-                </LineChart>
-              </ResponsiveContainer>
-            </div>
-          </div>
-
-          <div className="rounded-2xl bg-[#111827] p-5 sm:p-8">
-            <h2 className="text-2xl font-bold text-red-400">
-              Fraud Detection Trend
-            </h2>
-
-            <p className="mt-2 text-gray-400">
-              Suspicious activity trend from AI fraud monitoring.
-            </p>
-
-            <div className="mt-8 h-80">
-              <ResponsiveContainer width="100%" height="100%">
-                <AreaChart data={trends}>
-                  <CartesianGrid strokeDasharray="3 3" stroke="#374151" />
-                  <XAxis dataKey="month" stroke="#9CA3AF" />
-                  <YAxis stroke="#9CA3AF" />
-                  <Tooltip />
-                  <Area
-                    type="monotone"
-                    dataKey="fraud"
-                    stroke="#F87171"
-                    fill="#F87171"
-                    fillOpacity={0.3}
-                  />
-                </AreaChart>
-              </ResponsiveContainer>
-            </div>
-          </div>
-        </div>
-
-        <div className="mt-10 rounded-2xl bg-[#111827] p-5 sm:p-8">
-          <h2 className="text-2xl font-bold text-yellow-400">
-            AML Compliance Trend
-          </h2>
-
-          <p className="mt-2 text-gray-400">
-            AML case monitoring and compliance risk trend.
-          </p>
-
-          <div className="mt-8 h-80">
-            <ResponsiveContainer width="100%" height="100%">
+          <div className="mt-10 grid grid-cols-1 gap-8 xl:grid-cols-2">
+            <ChartCard title="Average Risk Score" description="Mean assessment score per month." colour="text-cyan-400">
               <LineChart data={trends}>
                 <CartesianGrid strokeDasharray="3 3" stroke="#374151" />
                 <XAxis dataKey="month" stroke="#9CA3AF" />
-                <YAxis stroke="#9CA3AF" />
-                <Tooltip />
-                <Line
-                  type="monotone"
-                  dataKey="aml"
-                  stroke="#FACC15"
-                  strokeWidth={4}
-                />
+                <YAxis stroke="#9CA3AF" allowDecimals={false} />
+                <Tooltip contentStyle={tooltipStyle} />
+                <Line type="monotone" dataKey="risk" name="Average score" stroke="#22D3EE" strokeWidth={3} />
               </LineChart>
-            </ResponsiveContainer>
+            </ChartCard>
+            <ChartCard title="Fraud Alerts Opened" description="High-risk fraud assessments per month." colour="text-red-400">
+              <AreaChart data={trends}>
+                <CartesianGrid strokeDasharray="3 3" stroke="#374151" />
+                <XAxis dataKey="month" stroke="#9CA3AF" />
+                <YAxis stroke="#9CA3AF" allowDecimals={false} />
+                <Tooltip contentStyle={tooltipStyle} />
+                <Area type="monotone" dataKey="fraud" name="Fraud alerts" stroke="#F87171" fill="#F87171" fillOpacity={0.3} />
+              </AreaChart>
+            </ChartCard>
           </div>
-        </div>
 
-        <div className="mt-10 rounded-2xl bg-[#111827] p-5 sm:p-8">
-          <h2 className="text-2xl font-bold text-orange-300">
-            Executive AI Summary
-          </h2>
+          <div className="mt-8">
+            <ChartCard title="AML Cases Opened" description="High-risk AML screenings per month." colour="text-yellow-400">
+              <LineChart data={trends}>
+                <CartesianGrid strokeDasharray="3 3" stroke="#374151" />
+                <XAxis dataKey="month" stroke="#9CA3AF" />
+                <YAxis stroke="#9CA3AF" allowDecimals={false} />
+                <Tooltip contentStyle={tooltipStyle} />
+                <Line type="monotone" dataKey="aml" name="AML cases" stroke="#FACC15" strokeWidth={3} />
+              </LineChart>
+            </ChartCard>
+          </div>
 
-          <p className="mt-4 leading-8 text-gray-300">
-            FinGuard AI detected increased portfolio risk, elevated fraud activity, and active AML monitoring cases.
-            Recommended action: prioritize fraud investigations, review high-risk credit profiles, and escalate AML cases for compliance review.
-          </p>
-        </div>
-      </main>
-    </div>
+          <div className="mt-8 rounded-2xl bg-[#111827] p-5 sm:p-8">
+            <h2 className="text-2xl font-bold text-orange-300">Summary</h2>
+            <p className="mt-4 leading-8 text-slate-300">
+              {metrics.fraud_alerts} fraud alerts and {metrics.aml_cases} AML cases are open, {metrics.high_priority_alerts} of them rated High or
+              Critical. The average risk score over the last 30 days is {metrics.risk_score}/100. Review high-priority items first on the Fraud
+              Detection and AML Monitoring pages.
+            </p>
+          </div>
+        </>
+      )}
+    </AppShell>
   );
 }

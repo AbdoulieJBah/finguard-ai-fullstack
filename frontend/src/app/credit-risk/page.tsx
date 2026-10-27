@@ -1,143 +1,75 @@
 "use client";
 
-import { useState } from "react";
-import Sidebar from "@/components/Sidebar";
+import { FormEvent, useState } from "react";
+import AppShell, { ErrorNotice, PageHeader } from "@/components/AppShell";
+import { RiskResultCard, inputClass, primaryButtonClass } from "@/components/RiskWidgets";
+import { api } from "@/lib/api";
+import type { CreditResult } from "@/lib/types";
 
 export default function CreditRiskPage() {
-  const API_URL =
-    process.env.NEXT_PUBLIC_API_URL ||
-    "http://localhost:8000";
-
   const [income, setIncome] = useState(50000);
   const [loanAmount, setLoanAmount] = useState(20000);
   const [creditScore, setCreditScore] = useState(720);
-
-  const [result, setResult] = useState<any>(null);
+  const [result, setResult] = useState<CreditResult | null>(null);
+  const [error, setError] = useState("");
   const [loading, setLoading] = useState(false);
 
-  const predictRisk = async () => {
+  async function assess(event: FormEvent) {
+    event.preventDefault();
     setLoading(true);
-
+    setError("");
     try {
-      const response = await fetch(
-        `${API_URL}/predict-credit-risk`,
-        {
-          method: "POST",
-          headers: {
-            "Content-Type": "application/json",
-          },
-          body: JSON.stringify({
-            income,
-            loan_amount: loanAmount,
-            credit_score: creditScore,
-          }),
-        }
-      );
-
-      const data = await response.json();
+      const data = await api<CreditResult>("/predict-credit-risk", {
+        method: "POST",
+        body: JSON.stringify({ income, loan_amount: loanAmount, credit_score: creditScore }),
+      });
       setResult(data);
-    } catch (error) {
-      console.error(error);
+    } catch (e) {
+      setError(e instanceof Error ? e.message : "Assessment failed");
+    } finally {
+      setLoading(false);
     }
-
-    setLoading(false);
-  };
+  }
 
   return (
-    <div className="flex min-h-screen flex-col bg-[#0B1120] text-white md:flex-row">
-      <Sidebar />
-
-      <main className="min-w-0 flex-1 p-4 sm:p-6 lg:p-8">
-        <h1 className="text-3xl font-bold sm:text-4xl lg:text-5xl text-cyan-400">
-          Credit Risk Intelligence
-        </h1>
-
-        <p className="mt-3 text-gray-400">
-          AI-powered credit risk monitoring and loan default prediction.
-        </p>
-
-        <div className="mt-10 rounded-2xl bg-[#111827] p-5 sm:p-8">
-          <h2 className="text-2xl font-bold sm:text-3xl text-yellow-400">
-            Credit Risk Prediction
-          </h2>
-
-          <div className="mt-8 grid grid-cols-1 gap-6 md:grid-cols-3">
-            <div>
-              <label className="text-gray-300">Annual Income</label>
-
-              <input
-                type="number"
-                value={income}
-                onChange={(e) => setIncome(Number(e.target.value))}
-                className="mt-2 w-full rounded-xl bg-[#1F2937] p-4 text-white outline-none"
-              />
-            </div>
-
-            <div>
-              <label className="text-gray-300">Loan Amount</label>
-
-              <input
-                type="number"
-                value={loanAmount}
-                onChange={(e) => setLoanAmount(Number(e.target.value))}
-                className="mt-2 w-full rounded-xl bg-[#1F2937] p-4 text-white outline-none"
-              />
-            </div>
-
-            <div>
-              <label className="text-gray-300">Credit Score</label>
-
-              <input
-                type="number"
-                value={creditScore}
-                onChange={(e) => setCreditScore(Number(e.target.value))}
-                className="mt-2 w-full rounded-xl bg-[#1F2937] p-4 text-white outline-none"
-              />
-            </div>
-          </div>
-
-          <button
-            onClick={predictRisk}
-            className="mt-8 rounded-xl bg-cyan-400 px-8 py-4 font-bold text-black transition hover:bg-cyan-300"
-          >
-            {loading ? "Analyzing..." : "Predict Credit Risk"}
-          </button>
-
-          {result && (
-            <div className="mt-10 rounded-2xl bg-[#0F172A] p-5 sm:p-8">
-              <h3 className="text-2xl font-bold sm:text-3xl text-green-400">
-                Prediction Result
-              </h3>
-
-              <div className="mt-6 grid grid-cols-1 gap-6 md:grid-cols-2">
-                <div>
-                  <p className="text-gray-400">Risk Level</p>
-
-                  <h2 className="text-5xl font-bold text-red-400">
-                    {result.risk_level}
-                  </h2>
-                </div>
-
-                <div>
-                  <p className="text-gray-400">Risk Score</p>
-
-                  <h2 className="text-5xl font-bold text-yellow-400">
-                    {result.risk_score}
-                  </h2>
-                </div>
-              </div>
-
-              <div className="mt-8">
-                <p className="text-gray-400">AI Recommendation</p>
-
-                <p className="mt-3 text-lg text-white">
-                  {result.recommendation}
-                </p>
-              </div>
-            </div>
-          )}
+    <AppShell>
+      <PageHeader
+        eyebrow="Lending"
+        title="Credit Risk"
+        description="Score a loan application on credit score and affordability. Every assessment is logged with its inputs."
+      />
+      <form onSubmit={assess} className="mt-8 rounded-2xl bg-[#111827] p-5 sm:p-8">
+        <h2 className="text-xl font-bold text-yellow-400 sm:text-2xl">Assess an application</h2>
+        <div className="mt-6 grid grid-cols-1 gap-5 md:grid-cols-3">
+          <label className="block text-sm text-slate-300">
+            Annual income (EUR)
+            <input type="number" min="1" step="1" required value={income} onChange={(e) => setIncome(Number(e.target.value))} className={inputClass} />
+          </label>
+          <label className="block text-sm text-slate-300">
+            Loan amount (EUR)
+            <input type="number" min="1" step="1" required value={loanAmount} onChange={(e) => setLoanAmount(Number(e.target.value))} className={inputClass} />
+          </label>
+          <label className="block text-sm text-slate-300">
+            Credit score (300-850)
+            <input type="number" min="300" max="850" step="1" required value={creditScore} onChange={(e) => setCreditScore(Number(e.target.value))} className={inputClass} />
+          </label>
         </div>
-      </main>
-    </div>
+        <button type="submit" disabled={loading} className={primaryButtonClass}>
+          {loading ? "Assessing…" : "Assess credit risk"}
+        </button>
+        {error && <ErrorNotice message={error} />}
+      </form>
+      {result && (
+        <RiskResultCard
+          level={result.risk_level}
+          score={result.risk_score}
+          recommendation={result.recommendation}
+          factors={result.factors}
+          assessmentId={result.assessment_id}
+          engine={result.engine}
+          extra={<p className="mt-4 text-sm text-slate-400">Loan-to-income ratio: {Math.round(result.debt_ratio * 100)}%</p>}
+        />
+      )}
+    </AppShell>
   );
 }

@@ -1,151 +1,99 @@
 "use client";
 
-import { useState } from "react";
-import Sidebar from "@/components/Sidebar";
+import { FormEvent, useState } from "react";
+import AppShell, { ErrorNotice, PageHeader } from "@/components/AppShell";
+import { AlertList, RiskResultCard, inputClass, primaryButtonClass } from "@/components/RiskWidgets";
+import { api } from "@/lib/api";
+import type { AmlResult } from "@/lib/types";
 
 export default function AMLMonitoringPage() {
-  const API_URL =
-    process.env.NEXT_PUBLIC_API_URL ||
-    "http://localhost:8000";
-
   const [transactionAmount, setTransactionAmount] = useState(25000);
-  const [countryRisk, setCountryRisk] = useState("High");
-  const [suspiciousTransfers, setSuspiciousTransfers] = useState(5);
-
-  const [result, setResult] = useState<any>(null);
+  const [countryRisk, setCountryRisk] = useState("high");
+  const [cashTransaction, setCashTransaction] = useState(false);
+  const [politicallyExposed, setPoliticallyExposed] = useState(false);
+  const [result, setResult] = useState<AmlResult | null>(null);
+  const [error, setError] = useState("");
   const [loading, setLoading] = useState(false);
+  const [refreshKey, setRefreshKey] = useState(0);
 
-  const predictAMLRisk = async () => {
+  async function assess(event: FormEvent) {
+    event.preventDefault();
     setLoading(true);
-
+    setError("");
     try {
-      const response = await fetch(`${API_URL}/predict-aml-risk`, {
+      const data = await api<AmlResult>("/predict-aml-risk", {
         method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-        },
         body: JSON.stringify({
           transaction_amount: transactionAmount,
           country_risk: countryRisk,
-          suspicious_transfers: suspiciousTransfers,
+          cash_transaction: cashTransaction,
+          politically_exposed: politicallyExposed,
         }),
       });
-
-      const data = await response.json();
       setResult(data);
-    } catch (error) {
-      console.error("AML prediction failed:", error);
+      setRefreshKey((key) => key + 1);
+    } catch (e) {
+      setError(e instanceof Error ? e.message : "Assessment failed");
+    } finally {
+      setLoading(false);
     }
-
-    setLoading(false);
-  };
+  }
 
   return (
-    <div className="flex min-h-screen flex-col bg-[#0B1120] text-white md:flex-row">
-      <Sidebar />
-
-      <main className="min-w-0 flex-1 p-4 sm:p-6 lg:p-8">
-        <h1 className="text-3xl font-bold sm:text-4xl lg:text-5xl text-cyan-400">
-          AML Monitoring Center
-        </h1>
-
-        <p className="mt-3 text-gray-400">
-          Anti-money laundering intelligence and compliance monitoring.
-        </p>
-
-        <div className="mt-10 rounded-2xl bg-[#111827] p-5 sm:p-8">
-          <h2 className="text-2xl font-bold sm:text-3xl text-yellow-400">
-            AML Risk Prediction
-          </h2>
-
-          <div className="mt-8 grid grid-cols-1 gap-6 md:grid-cols-3">
-            <div>
-              <label className="text-gray-300">
-                Transaction Amount
-              </label>
-
-              <input
-                type="number"
-                value={transactionAmount}
-                onChange={(e) =>
-                  setTransactionAmount(Number(e.target.value))
-                }
-                className="mt-2 w-full rounded-xl bg-[#1F2937] p-4 text-white outline-none"
-              />
-            </div>
-
-            <div>
-              <label className="text-gray-300">Country Risk</label>
-
-              <select
-                value={countryRisk}
-                onChange={(e) => setCountryRisk(e.target.value)}
-                className="mt-2 w-full rounded-xl bg-[#1F2937] p-4 text-white outline-none"
-              >
-                <option>Low</option>
-                <option>Medium</option>
-                <option>High</option>
-              </select>
-            </div>
-
-            <div>
-              <label className="text-gray-300">
-                Suspicious Transfers
-              </label>
-
-              <input
-                type="number"
-                value={suspiciousTransfers}
-                onChange={(e) =>
-                  setSuspiciousTransfers(Number(e.target.value))
-                }
-                className="mt-2 w-full rounded-xl bg-[#1F2937] p-4 text-white outline-none"
-              />
-            </div>
-          </div>
-
-          <button
-            onClick={predictAMLRisk}
-            className="mt-8 rounded-xl bg-cyan-400 px-8 py-4 font-bold text-black transition hover:bg-cyan-300"
-          >
-            {loading ? "Analyzing..." : "Predict AML Risk"}
-          </button>
-
-          {result && (
-            <div className="mt-10 rounded-2xl bg-[#0F172A] p-5 sm:p-8">
-              <h3 className="text-2xl font-bold sm:text-3xl text-green-400">
-                Prediction Result
-              </h3>
-
-              <div className="mt-6 grid grid-cols-1 gap-6 md:grid-cols-2">
-                <div>
-                  <p className="text-gray-400">AML Risk Level</p>
-
-                  <h2 className="text-5xl font-bold text-red-400">
-                    {result.aml_level}
-                  </h2>
-                </div>
-
-                <div>
-                  <p className="text-gray-400">AML Score</p>
-
-                  <h2 className="text-5xl font-bold text-yellow-400">
-                    {result.aml_score}
-                  </h2>
-                </div>
-              </div>
-
-              <div className="mt-8">
-                <p className="text-gray-400">AI Recommendation</p>
-
-                <p className="mt-3 text-lg text-white">
-                  {result.recommendation}
-                </p>
-              </div>
-            </div>
-          )}
+    <AppShell>
+      <PageHeader
+        eyebrow="Anti-money laundering"
+        title="AML Monitoring"
+        description="Screen a transaction for money-laundering risk. High-risk results open an AML case, and every assessment is logged."
+      />
+      <form onSubmit={assess} className="mt-8 rounded-2xl bg-[#111827] p-5 sm:p-8">
+        <h2 className="text-xl font-bold text-yellow-400 sm:text-2xl">Screen a transaction</h2>
+        <div className="mt-6 grid grid-cols-1 gap-5 md:grid-cols-2 xl:grid-cols-4">
+          <label className="block text-sm text-slate-300">
+            Transaction amount (EUR)
+            <input type="number" min="0.01" step="0.01" required value={transactionAmount} onChange={(e) => setTransactionAmount(Number(e.target.value))} className={inputClass} />
+          </label>
+          <label className="block text-sm text-slate-300">
+            Country risk
+            <select value={countryRisk} onChange={(e) => setCountryRisk(e.target.value)} className={inputClass}>
+              <option value="low">Low</option>
+              <option value="medium">Medium</option>
+              <option value="high">High</option>
+            </select>
+          </label>
+          <label className="block text-sm text-slate-300">
+            Cash transaction
+            <select value={cashTransaction ? "yes" : "no"} onChange={(e) => setCashTransaction(e.target.value === "yes")} className={inputClass}>
+              <option value="no">No</option>
+              <option value="yes">Yes</option>
+            </select>
+          </label>
+          <label className="block text-sm text-slate-300">
+            Politically exposed person
+            <select value={politicallyExposed ? "yes" : "no"} onChange={(e) => setPoliticallyExposed(e.target.value === "yes")} className={inputClass}>
+              <option value="no">No</option>
+              <option value="yes">Yes</option>
+            </select>
+          </label>
         </div>
-      </main>
-    </div>
+        <button type="submit" disabled={loading} className={primaryButtonClass}>
+          {loading ? "Screening…" : "Assess AML risk"}
+        </button>
+        {error && <ErrorNotice message={error} />}
+      </form>
+      {result && (
+        <RiskResultCard
+          level={result.aml_level}
+          score={result.aml_score}
+          recommendation={result.recommendation}
+          factors={result.factors}
+          assessmentId={result.assessment_id}
+          engine={result.engine}
+          alertId={result.alert_id}
+          alertLabel="AML case"
+        />
+      )}
+      <AlertList kind="aml" title="Open AML cases" refreshKey={refreshKey} />
+    </AppShell>
   );
 }

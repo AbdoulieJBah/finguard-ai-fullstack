@@ -1,153 +1,80 @@
 "use client";
 
-import { useEffect, useState } from "react";
-import Sidebar from "@/components/Sidebar";
+import { useCallback, useEffect, useState } from "react";
+import AppShell, { ErrorNotice, PageHeader } from "@/components/AppShell";
+import { useAuth } from "@/components/AuthProvider";
+import { api } from "@/lib/api";
+import type { SystemHealth } from "@/lib/types";
 
-interface SystemHealth {
-  frontend: string;
-  backend: string;
-  ml_services: string;
-  database: string;
-  copilot: string;
+function formatUptime(seconds: number): string {
+  const days = Math.floor(seconds / 86400);
+  const hours = Math.floor((seconds % 86400) / 3600);
+  const minutes = Math.floor((seconds % 3600) / 60);
+  if (days > 0) return `${days}d ${hours}h`;
+  if (hours > 0) return `${hours}h ${minutes}m`;
+  return `${minutes}m`;
+}
+
+function Card({ label, value, note, colour }: { label: string; value: string; note: string; colour: string }) {
+  return (
+    <div className="rounded-2xl bg-[#111827] p-6">
+      <p className="text-slate-400">{label}</p>
+      <p className={`mt-3 text-3xl font-bold ${colour}`}>{value}</p>
+      <p className="mt-3 text-sm text-slate-500">{note}</p>
+    </div>
+  );
 }
 
 export default function SystemHealthPage() {
-  const API_URL =
-    process.env.NEXT_PUBLIC_API_URL ||
-    "http://localhost:8000";
-
+  const { user } = useAuth();
   const [health, setHealth] = useState<SystemHealth | null>(null);
+  const [error, setError] = useState("");
+
+  const load = useCallback(() => {
+    setError("");
+    api<SystemHealth>("/system-health")
+      .then(setHealth)
+      .catch((e: unknown) => setError(e instanceof Error ? e.message : "Could not reach the API"));
+  }, []);
 
   useEffect(() => {
-    fetch(`${API_URL}/system-health`)
-      .then((res) => res.json())
-      .then((data) => setHealth(data))
-      .catch((error) => {
-        console.error("System health fetch failed:", error);
-
-        setHealth({
-          frontend: "Online",
-          backend: "Online",
-          ml_services: "Active",
-          database: "Connected",
-          copilot: "Ready",
-        });
-      });
-  }, [API_URL]);
-
-  if (!health) {
-    return (
-      <div className="flex h-screen items-center justify-center bg-[#0B1120] text-2xl text-white">
-        Loading System Health...
-      </div>
-    );
-  }
+    if (user) load();
+  }, [user, load]);
 
   return (
-    <div className="flex min-h-screen flex-col bg-[#0B1120] text-white md:flex-row">
-      <Sidebar />
-
-      <main className="min-w-0 flex-1 p-4 sm:p-6 lg:p-8">
-        <p className="text-sm uppercase tracking-[0.3em] text-cyan-400">
-          Infrastructure Monitoring
-        </p>
-
-        <h1 className="mt-3 text-3xl font-bold sm:text-4xl lg:text-5xl">
-          System Health Center
-        </h1>
-
-        <p className="mt-4 text-gray-400">
-          Monitor platform services, AI infrastructure, backend APIs,
-          database connectivity, and operational health.
-        </p>
-
-        <div className="mt-10 grid grid-cols-1 gap-6 md:grid-cols-2 xl:grid-cols-3">
-          <div className="rounded-2xl bg-[#111827] p-6">
-            <p className="text-gray-400">Frontend</p>
-
-            <h2 className="mt-3 text-4xl font-bold text-green-400">
-              {health.frontend}
-            </h2>
-
-            <p className="mt-3 text-sm text-gray-500">
-              Next.js application availability
-            </p>
+    <AppShell>
+      <PageHeader
+        eyebrow="Infrastructure"
+        title="System Health"
+        description="Measured on each check: API status, database round-trip time and uptime."
+      />
+      {error && <ErrorNotice message={error} onRetry={load} />}
+      {!health && !error && <p className="mt-8 text-slate-400">Checking…</p>}
+      {health && (
+        <>
+          <div className="mt-8 grid grid-cols-1 gap-6 md:grid-cols-2 xl:grid-cols-3">
+            <Card label="Backend API" value={health.backend} note={`FastAPI · version ${health.version}`} colour="text-green-400" />
+            <Card
+              label="Database"
+              value={health.database}
+              note={`${health.database_engine}${health.database_latency_ms !== null ? ` · ${health.database_latency_ms} ms round trip` : ""}`}
+              colour={health.database === "Connected" ? "text-green-400" : "text-red-400"}
+            />
+            <Card
+              label="Storage"
+              value={health.persistent_storage ? "Persistent" : "Temporary"}
+              note={health.persistent_storage ? "Data survives redeploys" : "Local SQLite file: data is reset on redeploy"}
+              colour={health.persistent_storage ? "text-green-400" : "text-amber-300"}
+            />
+            <Card label="Risk engine" value={health.risk_engine} note="Credit, fraud and AML scorecards" colour="text-cyan-400" />
+            <Card label="Copilot" value={health.copilot} note="Keyword routing over live figures" colour="text-purple-400" />
+            <Card label="Uptime" value={formatUptime(health.uptime_seconds)} note={`Checked ${new Date(health.checked_at).toLocaleTimeString()}`} colour="text-slate-200" />
           </div>
-
-          <div className="rounded-2xl bg-[#111827] p-6">
-            <p className="text-gray-400">Backend API</p>
-
-            <h2 className="mt-3 text-4xl font-bold text-green-400">
-              {health.backend}
-            </h2>
-
-            <p className="mt-3 text-sm text-gray-500">
-              FastAPI backend operational status
-            </p>
-          </div>
-
-          <div className="rounded-2xl bg-[#111827] p-6">
-            <p className="text-gray-400">ML Services</p>
-
-            <h2 className="mt-3 text-4xl font-bold text-cyan-400">
-              {health.ml_services}
-            </h2>
-
-            <p className="mt-3 text-sm text-gray-500">
-              AI prediction engines and model services
-            </p>
-          </div>
-
-          <div className="rounded-2xl bg-[#111827] p-6">
-            <p className="text-gray-400">Database</p>
-
-            <h2 className="mt-3 text-4xl font-bold text-yellow-400">
-              {health.database}
-            </h2>
-
-            <p className="mt-3 text-sm text-gray-500">
-              Banking data and analytics connectivity
-            </p>
-          </div>
-
-          <div className="rounded-2xl bg-[#111827] p-6">
-            <p className="text-gray-400">AI Copilot</p>
-
-            <h2 className="mt-3 text-4xl font-bold text-purple-400">
-              {health.copilot}
-            </h2>
-
-            <p className="mt-3 text-sm text-gray-500">
-              Conversational AI and executive intelligence
-            </p>
-          </div>
-
-          <div className="rounded-2xl bg-[#111827] p-6">
-            <p className="text-gray-400">Platform Status</p>
-
-            <h2 className="mt-3 text-4xl font-bold text-green-400">
-              Stable
-            </h2>
-
-            <p className="mt-3 text-sm text-gray-500">
-              Enterprise banking platform operational health
-            </p>
-          </div>
-        </div>
-
-        <div className="mt-10 rounded-2xl bg-[#111827] p-5 sm:p-8">
-          <h2 className="text-2xl font-bold text-orange-300">
-            AI Infrastructure Summary
-          </h2>
-
-          <p className="mt-6 leading-8 text-gray-300">
-            FinGuard AI infrastructure is operational. Frontend and backend
-            services are responding correctly, AI prediction services are active,
-            and monitoring systems are functioning normally. No critical system
-            incidents detected.
-          </p>
-        </div>
-      </main>
-    </div>
+          <button type="button" onClick={load} className="mt-8 rounded-xl border border-white/10 px-5 py-2.5 text-sm font-semibold hover:bg-white/5">
+            Check again
+          </button>
+        </>
+      )}
+    </AppShell>
   );
 }
