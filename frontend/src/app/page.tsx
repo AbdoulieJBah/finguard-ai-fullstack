@@ -73,15 +73,15 @@ export default function DashboardPage() {
   }
 
   return (
-    <div className="flex min-h-screen bg-[#0B1120] text-white">
+    <div className="flex min-h-screen flex-col bg-[#0B1120] text-white md:flex-row">
       <Sidebar />
 
-      <main className="flex-1 p-8">
+      <main className="min-w-0 flex-1 p-4 sm:p-6 lg:p-8">
         <p className="text-sm uppercase tracking-[0.3em] text-cyan-400">
           Enterprise Banking Intelligence Platform
         </p>
 
-        <h1 className="mt-3 text-5xl font-bold">Executive Dashboard</h1>
+        <h1 className="mt-3 text-3xl font-bold sm:text-4xl lg:text-5xl">Executive Dashboard</h1>
 
         <p className="mt-4 text-gray-400">
           Real-time banking intelligence, fraud analytics, AML monitoring, and AI-powered risk insights.
@@ -122,7 +122,7 @@ export default function DashboardPage() {
         </div>
 
         <div className="mt-10 grid grid-cols-1 gap-8 xl:grid-cols-2">
-          <div className="rounded-2xl bg-[#111827] p-8">
+          <div className="rounded-2xl bg-[#111827] p-5 sm:p-8">
             <h2 className="text-2xl font-bold text-cyan-400">
               Risk Analytics Trend
             </h2>
@@ -149,7 +149,7 @@ export default function DashboardPage() {
             </div>
           </div>
 
-          <div className="rounded-2xl bg-[#111827] p-8">
+          <div className="rounded-2xl bg-[#111827] p-5 sm:p-8">
             <h2 className="text-2xl font-bold text-red-400">
               Fraud Detection Trend
             </h2>
@@ -178,7 +178,7 @@ export default function DashboardPage() {
           </div>
         </div>
 
-        <div className="mt-10 rounded-2xl bg-[#111827] p-8">
+        <div className="mt-10 rounded-2xl bg-[#111827] p-5 sm:p-8">
           <h2 className="text-2xl font-bold text-yellow-400">
             AML Compliance Trend
           </h2>
@@ -205,7 +205,7 @@ export default function DashboardPage() {
           </div>
         </div>
 
-        <div className="mt-10 rounded-2xl bg-[#111827] p-8">
+        <div className="mt-10 rounded-2xl bg-[#111827] p-5 sm:p-8">
           <h2 className="text-2xl font-bold text-orange-300">
             Executive AI Summary
           </h2>

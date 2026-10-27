@@ -44,11 +44,11 @@ export default function CreditRiskPage() {
   };
 
   return (
-    <div className="flex min-h-screen bg-[#0B1120] text-white">
+    <div className="flex min-h-screen flex-col bg-[#0B1120] text-white md:flex-row">
       <Sidebar />
 
-      <main className="flex-1 p-8">
-        <h1 className="text-5xl font-bold text-cyan-400">
+      <main className="min-w-0 flex-1 p-4 sm:p-6 lg:p-8">
+        <h1 className="text-3xl font-bold sm:text-4xl lg:text-5xl text-cyan-400">
           Credit Risk Intelligence
         </h1>
 
@@ -56,8 +56,8 @@ export default function CreditRiskPage() {
           AI-powered credit risk monitoring and loan default prediction.
         </p>
 
-        <div className="mt-10 rounded-2xl bg-[#111827] p-8">
-          <h2 className="text-3xl font-bold text-yellow-400">
+        <div className="mt-10 rounded-2xl bg-[#111827] p-5 sm:p-8">
+          <h2 className="text-2xl font-bold sm:text-3xl text-yellow-400">
             Credit Risk Prediction
           </h2>
 
@@ -104,8 +104,8 @@ export default function CreditRiskPage() {
           </button>
 
           {result && (
-            <div className="mt-10 rounded-2xl bg-[#0F172A] p-8">
-              <h3 className="text-3xl font-bold text-green-400">
+            <div className="mt-10 rounded-2xl bg-[#0F172A] p-5 sm:p-8">
+              <h3 className="text-2xl font-bold sm:text-3xl text-green-400">
                 Prediction Result
               </h3>
 

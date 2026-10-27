@@ -13,11 +13,11 @@ export default function AuditLogsPage() {
   }, []);
 
   return (
-    <div className="flex min-h-screen bg-[#0B1120] text-white">
+    <div className="flex min-h-screen flex-col bg-[#0B1120] text-white md:flex-row">
       <Sidebar />
 
-      <main className="flex-1 p-8">
-        <h1 className="text-4xl font-bold text-cyan-400">
+      <main className="min-w-0 flex-1 p-4 sm:p-6 lg:p-8">
+        <h1 className="text-3xl font-bold sm:text-4xl text-cyan-400">
           Audit Logs & Monitoring
         </h1>
 
@@ -25,7 +25,7 @@ export default function AuditLogsPage() {
           Operational audit trails, AI decisions, fraud investigations, and compliance monitoring history.
         </p>
 
-        <div className="mt-10 rounded-2xl bg-[#111827] p-8">
+        <div className="mt-10 rounded-2xl bg-[#111827] p-5 sm:p-8">
           <h2 className="mb-6 text-2xl font-bold text-orange-300">
             System Activity Logs
           </h2>
