@@ -13,6 +13,7 @@ from sqlalchemy.orm import Session
 
 from ..config import APP_VERSION
 from ..models import Account, Alert, AuditEvent, RiskAssessment, utcnow
+from ..ml.fraud import get_model
 from ..risk import ENGINE_VERSION
 from ..schemas import CopilotRequest
 from ..security import AuditUser, DbSession, StaffUser
@@ -112,7 +113,7 @@ def system_health(user: StaffUser, db: DbSession):
         "version": APP_VERSION,
         "database_engine": engine_name,
         "persistent_storage": bind.dialect.name != "sqlite",
-        "risk_engine": f"Rule-based ({ENGINE_VERSION})",
+        "risk_engine": f"Fraud: trained scorecard {get_model().version} · credit and AML: rules ({ENGINE_VERSION})",
         "copilot": "Rule-based",
         "uptime_seconds": int(time.monotonic() - STARTED_AT),
         "checked_at": iso(utcnow()),

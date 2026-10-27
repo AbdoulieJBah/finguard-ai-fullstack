@@ -7,6 +7,8 @@ import { useAuth } from "@/components/AuthProvider";
 import { api } from "@/lib/api";
 import type { DashboardMetrics, RiskTrend } from "@/lib/types";
 
+const plural = (count: number, noun: string) => `${count} ${noun}${count === 1 ? "" : "s"}`;
+
 const tooltipStyle = { backgroundColor: "#0F172A", border: "1px solid rgba(255,255,255,0.1)", borderRadius: 12, color: "#fff" };
 
 function Stat({ label, value, note, colour }: { label: string; value: string | number; note: string; colour: string }) {
@@ -107,8 +109,8 @@ export default function DashboardPage() {
           <div className="mt-8 rounded-2xl bg-[#111827] p-5 sm:p-8">
             <h2 className="text-2xl font-bold text-orange-300">Summary</h2>
             <p className="mt-4 leading-8 text-slate-300">
-              {metrics.fraud_alerts} fraud alerts and {metrics.aml_cases} AML cases are open, {metrics.high_priority_alerts} of them rated High or
-              Critical. The average risk score over the last 30 days is {metrics.risk_score}/100. Review high-priority items first on the Fraud
+              {plural(metrics.fraud_alerts, "fraud alert")} and {plural(metrics.aml_cases, "AML case")} {metrics.fraud_alerts + metrics.aml_cases === 1 ? "is" : "are"}{" "}
+              open, {metrics.high_priority_alerts} of them rated High or Critical. The average risk score over the last 30 days is {metrics.risk_score}/100. Review high-priority items first on the Fraud
               Detection and AML Monitoring pages.
             </p>
           </div>

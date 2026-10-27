@@ -17,6 +17,8 @@ PROTECTED = [
     ("post", "/predict-credit-risk", {"income": 50000, "loan_amount": 20000, "credit_score": 700}),
     ("post", "/predict-fraud-risk", {"transaction_amount": 100, "transaction_frequency": 1}),
     ("post", "/predict-aml-risk", {"transaction_amount": 100}),
+    ("post", "/predict-fraud-model", {"amount": 100, "sender_balance": 1000}),
+    ("get", "/models/fraud", None),
     ("get", "/alerts", None),
     ("get", "/dashboard-metrics", None),
     ("get", "/risk-trends", None),

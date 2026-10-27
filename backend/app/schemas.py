@@ -45,5 +45,17 @@ class AmlRiskRequest(BaseModel):
         return value.strip().lower() if isinstance(value, str) else value
 
 
+class FraudModelRequest(BaseModel):
+    amount: float = Field(gt=0, le=1_000_000_000)
+    sender_balance: float = Field(ge=0, le=1_000_000_000_000)
+    transaction_type: Literal["TRANSFER", "CASH_OUT"] = "TRANSFER"
+    hour: int | None = Field(default=None, ge=0, le=23, description="UTC hour of the payment; defaults to now")
+
+    @field_validator("transaction_type", mode="before")
+    @classmethod
+    def _uppercase(cls, value: object) -> object:
+        return value.strip().upper().replace(" ", "_").replace("-", "_") if isinstance(value, str) else value
+
+
 class CopilotRequest(BaseModel):
     question: str = Field(min_length=2, max_length=500)

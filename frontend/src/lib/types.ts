@@ -26,6 +26,8 @@ export type Transaction = {
   status: string;
 };
 
+export type FraudFactor = { label: string; value: string; contribution: number };
+
 export type TransferResult = {
   reference: string;
   status: string;
@@ -33,6 +35,49 @@ export type TransferResult = {
   currency: string;
   available_balance: number;
   created_at: string;
+  fraud_check?: {
+    level: string;
+    probability: number;
+    score: number;
+    alert_id: number | null;
+    assessment_id: number;
+    top_factors: FraudFactor[];
+    model_version: string;
+  };
+};
+
+export type FraudContribution = { feature: string; label: string; value: string; contribution: number };
+
+export type FraudModelResult = {
+  amount: number;
+  sender_balance: number;
+  transaction_type: string;
+  hour: number;
+  probability: number;
+  score: number;
+  level: string;
+  logit: number;
+  base_value: number;
+  contributions: FraudContribution[];
+  thresholds: { high: number; medium: number };
+  assessment_id: number;
+  alert_id: number | null;
+  model_version: string;
+};
+
+type ThresholdMetrics = { threshold: number; precision: number; recall: number; f1: number; alerts_per_10k: number };
+
+export type FraudModelCard = {
+  name: string;
+  version: string;
+  trained_at: string;
+  algorithm: string;
+  data: { source: string; license: string; rows: number; frauds: number; fraud_rate: number };
+  split: Record<string, { steps: number[]; rows: number; frauds: number; fraud_rate: number }>;
+  thresholds: { high: number; medium: number };
+  metrics: { test: { pr_auc: number; roc_auc: number; brier: number; at_high: ThresholdMetrics; at_medium: ThresholdMetrics } };
+  comparison: { model: string; strategy: string; validation: { pr_auc: number }; test: { pr_auc: number; roc_auc: number }; deployed?: boolean }[];
+  limitations: string[];
 };
 
 export type DashboardMetrics = {

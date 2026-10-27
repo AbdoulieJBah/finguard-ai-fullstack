@@ -66,7 +66,7 @@ export default function SystemHealthPage() {
               note={health.persistent_storage ? "Data survives redeploys" : "Local SQLite file: data is reset on redeploy"}
               colour={health.persistent_storage ? "text-green-400" : "text-amber-300"}
             />
-            <Card label="Risk engine" value={health.risk_engine} note="Credit, fraud and AML scorecards" colour="text-cyan-400" />
+            <Card label="Risk engines" value="Model + rules" note={health.risk_engine} colour="text-cyan-400" />
             <Card label="Copilot" value={health.copilot} note="Keyword routing over live figures" colour="text-purple-400" />
             <Card label="Uptime" value={formatUptime(health.uptime_seconds)} note={`Checked ${new Date(health.checked_at).toLocaleTimeString()}`} colour="text-slate-200" />
           </div>

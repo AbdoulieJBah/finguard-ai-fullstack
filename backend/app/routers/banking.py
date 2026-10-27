@@ -12,6 +12,7 @@ from sqlalchemy import delete, select, update
 from sqlalchemy.exc import IntegrityError
 from sqlalchemy.orm import Session
 
+from ..fraud_checks import check_payment
 from ..models import Account, IdempotencyKey, Transaction, User, utcnow
 from ..schemas import TransferRequest
 from ..security import CurrentUser, DbSession
@@ -20,6 +21,11 @@ from ..utils import iso, record_audit
 router = APIRouter(tags=["banking"])
 
 IDEMPOTENCY_TTL = timedelta(hours=24)
+
+
+def utc_hour() -> int:
+    """Hour used by the fraud model (a function so tests can fix the time)."""
+    return utcnow().hour
 
 
 def account_json(account: Account) -> dict:
@@ -122,6 +128,7 @@ def _move_funds(db: Session, user: User, payload: TransferRequest, amount_cents:
         raise HTTPException(status.HTTP_409_CONFLICT, "Cross-currency transfers are not supported")
     if source.status != "active" or target.status != "active":
         raise HTTPException(status.HTTP_409_CONFLICT, "Both accounts must be active")
+    balance_before_cents = source.balance_cents
 
     # Lock both rows in a fixed order (PostgreSQL) so concurrent opposite transfers cannot deadlock.
     db.execute(
@@ -160,6 +167,16 @@ def _move_funds(db: Session, user: User, payload: TransferRequest, amount_cents:
         ]
     )
     record_audit(db, f"Transfer {reference} completed", user.name)
+    # Every payment is scored by the fraud model; high-risk payments open an alert for review.
+    check = check_payment(
+        db,
+        user,
+        amount=amount_cents / 100,
+        sender_balance=balance_before_cents / 100,
+        hour=utc_hour(),
+        transaction_type="TRANSFER",
+        subject=f"Payment {reference} from {source.account_number}",
+    )
     db.flush()
     balance_cents = db.scalar(select(Account.balance_cents).where(Account.id == source.id))
     return {
@@ -169,6 +186,18 @@ def _move_funds(db: Session, user: User, payload: TransferRequest, amount_cents:
         "currency": source.currency,
         "available_balance": balance_cents / 100,
         "created_at": iso(now),
+        "fraud_check": {
+            "level": check.score.level,
+            "probability": round(check.score.probability, 6),
+            "score": round(check.score.probability * 100),
+            "alert_id": check.alert.id if check.alert else None,
+            "assessment_id": check.assessment.id,
+            "top_factors": [
+                {"label": c.label, "value": c.value, "contribution": round(c.contribution, 4)}
+                for c in check.score.contributions[:3]
+            ],
+            "model_version": check.score.model_version,
+        },
     }
 
 

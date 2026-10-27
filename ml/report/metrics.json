@@ -1,0 +1,277 @@
+{
+ "split": {
+  "train": {
+   "steps": [
+    1,
+    281
+   ],
+   "rows": 1672907,
+   "frauds": 3193,
+   "fraud_rate": 0.0019086536191192935
+  },
+  "validation": {
+   "steps": [
+    282,
+    354
+   ],
+   "rows": 544998,
+   "frauds": 762,
+   "fraud_rate": 0.001398170268514747
+  },
+  "test": {
+   "steps": [
+    355,
+    743
+   ],
+   "rows": 552504,
+   "frauds": 4258,
+   "fraud_rate": 0.007706731534975312
+  }
+ },
+ "metrics": {
+  "validation": {
+   "pr_auc": 0.9943466969575204,
+   "roc_auc": 0.9999932832230668,
+   "brier": 5.621753607628798e-05,
+   "at_high": {
+    "threshold": 0.6645561616573513,
+    "precision": 0.9642401021711366,
+    "recall": 0.9908136482939632,
+    "f1": 0.9773462783171522,
+    "true_positives": 755,
+    "false_positives": 28,
+    "false_negatives": 7,
+    "alerts_per_10k": 14.367025200092476
+   }
+  },
+  "test": {
+   "pr_auc": 0.9953294636563947,
+   "roc_auc": 0.9984142063921151,
+   "brier": 0.0003047665965660524,
+   "at_high": {
+    "threshold": 0.6645561616573513,
+    "precision": 0.9897202964379632,
+    "recall": 0.9722874589008924,
+    "f1": 0.9809264305177111,
+    "true_positives": 4140,
+    "false_positives": 43,
+    "false_negatives": 118,
+    "alerts_per_10k": 75.70985911414216
+   },
+   "at_medium": {
+    "threshold": 0.06645561616573513,
+    "precision": 0.9895287958115183,
+    "recall": 0.9765147956787225,
+    "f1": 0.9829787234042554,
+    "true_positives": 4158,
+    "false_positives": 44,
+    "false_negatives": 100,
+    "alerts_per_10k": 76.0537480271636
+   },
+   "calibration": [
+    {
+     "range": "0-0.001",
+     "count": 542033,
+     "mean_predicted": 5.174820765092913e-05,
+     "observed_rate": 2.3983779585375798e-05
+    },
+    {
+     "range": "0.001-0.01",
+     "count": 5997,
+     "mean_predicted": 0.0021947894765239053,
+     "observed_rate": 0.001167250291812573
+    },
+    {
+     "range": "0.01-0.05",
+     "count": 253,
+     "mean_predicted": 0.016352856020373584,
+     "observed_rate": 0.25691699604743085
+    },
+    {
+     "range": "0.05-0.1",
+     "count": 29,
+     "mean_predicted": 0.06610255336525522,
+     "observed_rate": 0.8620689655172413
+    },
+    {
+     "range": "0.1-0.2",
+     "count": 9,
+     "mean_predicted": 0.11034372946801049,
+     "observed_rate": 0.8888888888888888
+    },
+    {
+     "range": "0.5-1",
+     "count": 4183,
+     "mean_predicted": 0.950384303261068,
+     "observed_rate": 0.9897202964379632
+    }
+   ]
+  }
+ },
+ "comparison": [
+  {
+   "model": "Scorecard (binned logistic regression)",
+   "strategy": "none",
+   "validation": {
+    "pr_auc": 0.9943466969575204,
+    "roc_auc": 0.9999932832230668,
+    "brier": 5.621753607628798e-05
+   },
+   "test": {
+    "pr_auc": 0.9953294636563947,
+    "roc_auc": 0.9984142063921151,
+    "brier": 0.0003047665965660524
+   },
+   "deployed": true
+  },
+  {
+   "model": "Gradient boosting (HistGradientBoosting)",
+   "strategy": "none",
+   "validation": {
+    "pr_auc": 0.9352916673510903,
+    "roc_auc": 0.9998769410749879,
+    "brier": 0.0002988358864674117
+   },
+   "test": {
+    "pr_auc": 0.9794179795363237,
+    "roc_auc": 0.99982235417673,
+    "brier": 0.0011738323225096942
+   }
+  },
+  {
+   "model": "Scorecard (binned logistic regression)",
+   "strategy": "class_weight",
+   "validation": {
+    "pr_auc": 0.9900045645551749,
+    "roc_auc": 0.9999871825425279,
+    "brier": 0.00011247043377726733
+   },
+   "test": {
+    "pr_auc": 0.9939147643917959,
+    "roc_auc": 0.9992788151963002,
+    "brier": 0.0005745550957260476
+   }
+  },
+  {
+   "model": "Gradient boosting (HistGradientBoosting)",
+   "strategy": "class_weight",
+   "validation": {
+    "pr_auc": 0.9002359114469244,
+    "roc_auc": 0.9997139263094506,
+    "brier": 0.00039046232109148234
+   },
+   "test": {
+    "pr_auc": 0.9676790968118598,
+    "roc_auc": 0.9995258699965399,
+    "brier": 0.0018409956324991962
+   }
+  },
+  {
+   "model": "Scorecard (binned logistic regression)",
+   "strategy": "undersample",
+   "validation": {
+    "pr_auc": 0.9934681809173656,
+    "roc_auc": 0.9999923307452752,
+    "brier": 0.00015539172009425585
+   },
+   "test": {
+    "pr_auc": 0.9951600797307336,
+    "roc_auc": 0.9987655047751437,
+    "brier": 0.0009075491704762091
+   }
+  },
+  {
+   "model": "Gradient boosting (HistGradientBoosting)",
+   "strategy": "undersample",
+   "validation": {
+    "pr_auc": 0.9536019041370375,
+    "roc_auc": 0.9999568009123108,
+    "brier": 0.00020753558858513678
+   },
+   "test": {
+    "pr_auc": 0.9893338328668272,
+    "roc_auc": 0.999918107041213,
+    "brier": 0.0003304137123846
+   }
+  },
+  {
+   "model": "Scorecard (binned logistic regression)",
+   "strategy": "smote",
+   "validation": {
+    "pr_auc": 0.9926557746840348,
+    "roc_auc": 0.9999914457848965,
+    "brier": 7.291582954422342e-05
+   },
+   "test": {
+    "pr_auc": 0.9949024501238205,
+    "roc_auc": 0.9987252701393075,
+    "brier": 0.00042182585874297974
+   }
+  },
+  {
+   "model": "Gradient boosting (HistGradientBoosting)",
+   "strategy": "smote",
+   "validation": {
+    "pr_auc": 0.9353298500108076,
+    "roc_auc": 0.9998718471273048,
+    "brier": 0.00029808941228612687
+   },
+   "test": {
+    "pr_auc": 0.979774731272545,
+    "roc_auc": 0.9995578771473277,
+    "brier": 0.0011975514060105611
+   }
+  }
+ ],
+ "baseline": [
+  {
+   "rule": "Moves the entire balance (99.9% to 100%)",
+   "precision": 0.9897202964379632,
+   "recall": 0.9722874589008924,
+   "overlap_with_model_high": 1.0
+  },
+  {
+   "rule": "Moves the entire balance and is a TRANSFER",
+   "precision": 0.9980276134122288,
+   "recall": 0.47534053546265853,
+   "overlap_with_model_high": 0.48481950753048053
+  },
+  {
+   "rule": "Amount above 10,000 (from the old rules)",
+   "precision": 0.007680245230845536,
+   "recall": 0.9673555659934241,
+   "overlap_with_model_high": 0.007562863859129776
+  }
+ ],
+ "importance": [
+  {
+   "feature": "sender_balance",
+   "label": "Sender balance before",
+   "mean_abs_contribution": 1.2672483941119268
+  },
+  {
+   "feature": "balance_share",
+   "label": "Share of balance moved",
+   "mean_abs_contribution": 1.117813223101953
+  },
+  {
+   "feature": "transaction_type",
+   "label": "Transaction type",
+   "mean_abs_contribution": 0.4966354099877026
+  },
+  {
+   "feature": "amount",
+   "label": "Amount",
+   "mean_abs_contribution": 0.3124584904455272
+  },
+  {
+   "feature": "hour",
+   "label": "Hour of day",
+   "mean_abs_contribution": 0.22516982354338183
+  }
+ ],
+ "thresholds": {
+  "high": 0.6645561616573513,
+  "medium": 0.06645561616573513
+ }
+}

@@ -105,6 +105,20 @@ export default function TransfersPage() {
               </div>
             </div>
           )}
+          {result?.fraud_check && (
+            <div
+              className={`rounded-xl p-4 text-sm ${result.fraud_check.level === "High" ? "bg-red-500/10 text-red-200" : result.fraud_check.level === "Medium" ? "bg-amber-400/10 text-amber-200" : "bg-white/5 text-slate-300"}`}
+            >
+              <p className="font-semibold">
+                Fraud check: {result.fraud_check.level} risk ({(result.fraud_check.probability * 100).toFixed(1)}%)
+                {result.fraud_check.alert_id ? `. Alert #${result.fraud_check.alert_id} opened for review.` : ""}
+              </p>
+              <p className="mt-1 text-xs opacity-80">
+                Main factors:{" "}
+                {result.fraud_check.top_factors.map((f) => `${f.label.toLowerCase()} (${f.value})`).join(", ")}
+              </p>
+            </div>
+          )}
           <button disabled={busy || !accounts.length} className="w-full rounded-xl bg-cyan-400 p-3 font-bold text-slate-950 disabled:opacity-50">
             {busy ? "Authorising…" : "Review and send"}
           </button>
@@ -115,7 +129,8 @@ export default function TransfersPage() {
           <h2 className="mt-4 font-semibold">Protected transfer</h2>
           <p className="mt-2 text-sm leading-6 text-slate-400">
             Balances update in one database transaction. Failed validation or insufficient funds roll back the entire payment. Each payment carries
-            an idempotency key, so a retried request after a network error is never paid twice.
+            an idempotency key, so a retried request after a network error is never paid twice. Every payment is also scored by the fraud model,
+            and high-risk payments open an alert for review.
           </p>
           <p className="mt-5 text-xs text-amber-300">Demo environment: no real money is moved.</p>
         </aside>

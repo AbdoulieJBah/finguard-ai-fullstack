@@ -7,9 +7,11 @@ from fastapi import APIRouter, Query
 from sqlalchemy import select
 from sqlalchemy.orm import Session
 
+from ..fraud_checks import check_payment, score_json
+from ..ml.fraud import get_model
 from ..models import Alert, RiskAssessment, User, utcnow
 from ..risk import ENGINE_VERSION, RiskResult, aml_risk, credit_risk, fraud_risk
-from ..schemas import AmlRiskRequest, CreditRiskRequest, FraudRiskRequest
+from ..schemas import AmlRiskRequest, CreditRiskRequest, FraudModelRequest, FraudRiskRequest
 from ..security import DbSession, StaffUser
 from ..utils import iso, record_audit
 
@@ -107,6 +109,32 @@ def predict_fraud_risk(payload: FraudRiskRequest, user: StaffUser, db: DbSession
         "alert_id": alert.id if alert else None,
         "engine": ENGINE_VERSION,
     }
+
+
+@router.post("/predict-fraud-model")
+def predict_fraud_model(payload: FraudModelRequest, user: StaffUser, db: DbSession) -> dict:
+    """Score a payment with the trained fraud scorecard and explain the score feature by feature."""
+    hour = payload.hour if payload.hour is not None else utcnow().hour
+    check = check_payment(
+        db,
+        user,
+        amount=payload.amount,
+        sender_balance=payload.sender_balance,
+        hour=hour,
+        transaction_type=payload.transaction_type,
+        subject="Manual assessment",
+    )
+    if check.alert is not None:
+        check.alert.subject = f"Assessment #{check.assessment.id}"
+    record_audit(db, f"Fraud model assessment: {check.score.level}", user.name)
+    db.commit()
+    return {**payload.model_dump(), "hour": hour, **score_json(check)}
+
+
+@router.get("/models/fraud")
+def fraud_model_card(user: StaffUser) -> dict:
+    """Model card: training data, validation method, test metrics, thresholds and limitations."""
+    return get_model().card()
 
 
 @router.post("/predict-aml-risk")
